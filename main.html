@@ -26,7 +26,7 @@
         var coh = 6.5;
         var sep = 7;
         var ali = 6.5;
-        var amount = 700;
+        var amount = 500;
         var spread = 80;
         var speed = 35;
         var view = 7;
@@ -93,8 +93,9 @@
             roughness: 0.8
         });
         shadowMaterial.opacity = 0.5;
+        let groundSize = 10000;
         var groundMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(100, .1, 100),
+            new THREE.BoxGeometry(groundSize, .1, groundSize),
             shadowMaterial
         );
         groundMesh.receiveShadow = true;
