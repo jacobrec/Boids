@@ -23,6 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r82/three.js"></script>
     <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
     <script>
+        // Paremters to be adjusted for differnt behaviors, these were chosen by trial and error
         var coh = 6.5;
         var sep = 7;
         var ali = 6.5;
@@ -85,7 +86,7 @@
         pointLight.shadow.mapSize.height = 1024;
         scene.add(pointLight);
 
-        // A basic material that shows the geometry wireframe.
+        // A basic material that will be the ground
         var shadowMaterial = new THREE.MeshStandardMaterial({
             color: 0x333333,
             shading: THREE.FlatShading,
@@ -110,7 +111,7 @@
 
 
 
-        // Add an orbit control which allows us to move around the scene. See the three.js example for more details
+        // Add an orbit control which allows moving around the scene. See the three.js example for more details
         // https://github.com/mrdoob/three.js/blob/dev/examples/js/controls/OrbitControls.
         var controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.target = new THREE.Vector3(0, 15, 0);
@@ -119,7 +120,9 @@
 
         function render() {
             for (bird of birds) {
+                // steering behavoir sets velocity
                 bird.steer(birds);
+                // update moves the boids location based on velocity
                 bird.update(1 / 60);
             }
             // Update camera position based on the controls
@@ -135,12 +138,14 @@
 
 
         function Bird() {
+            // creates the cone shape of a random colour
             this.shape = new THREE.Mesh(new THREE.ConeGeometry(1, 3, 6), new THREE.MeshStandardMaterial({
                 color: parseInt(randomColor().substring(1), 16),
                 shading: THREE.FlatShading,
                 metalness: 0,
                 roughness: 0.8
             }));
+            // sets its location
             this.shape.position.y += spread * (2 * Math.random());
             this.shape.position.z += spread * (2 * Math.random() - 1);
             this.shape.position.x += spread * (2 * Math.random() - 1);
@@ -149,7 +154,8 @@
 
             this.velocity = new THREE.Vector3(2 * Math.random() - 1, Math.random(), 2 * Math.random() - 1);
             this.velocity.normalize();
-
+            
+            // id is for debugging purposes
             this.id = 1;
 
             this.steer = function(birds) {
@@ -169,38 +175,52 @@
                         // Does not check self
                         if (bpos.distanceToSquared(pos) < Math.pow(view, 2)) {
                             // If this bird is on the neighbourhood
+                            
+                            // adds all velocity of boids in vicinity
                             alignment.add(bvel);
+                            
+                             // adds all positions of boids in vicinity
                             cohesion.add(bpos);
+                            
+                            // calculates a scaling seperation force that increases nonlinearly when other boids get closer
                             separation.add(bpos).sub(pos).multiplyScalar(5 / bpos.distanceTo(pos));
+                            
+                            // counts the number of boids in vicinity for later calulations
                             numInTheHood++;
                         }
                     }
                 }
-
+                // adds a repulstion force from the ground
                 let floor = new THREE.Vector3();
                 if (pos.y < 5) {
                     floor.y = Math.abs(5 / pos.y);
                 }
-
+                
+                // uses the total velocity to calculate the average velocity of those in the vicinity
                 alignment.divideScalar(numInTheHood);
                 alignment.normalize();
                 alignment.multiplyScalar(ali);
 
+                //uses the total positions to calculate center of mass, then calculates the vector from its current location to the center of mass
                 cohesion.divideScalar(numInTheHood);
                 cohesion.sub(pos);
                 cohesion.normalize();
                 cohesion.multiplyScalar(coh);
 
+                //uses all total seperations to repel itself from others
                 separation.divideScalar(-numInTheHood);
                 separation.normalize();
                 separation.multiplyScalar(sep);
 
+                // takes into account all steerings, and adds it to the current velocity, then scales it to speed
                 this.velocity.add(cohesion).add(alignment).add(separation).add(floor).normalize().multiplyScalar(speed);
             }
 
             this.update = function(delta) {
+                // sets new position from velocity
                 this.shape.position.addScaledVector(this.velocity, delta);
                 if (this.velocity.length() != 0) {
+                    // If the velocity is not zero, sets the rotation of the shape to align with direction
                     this.shape.rotation.setFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), this.velocity.clone().normalize()));
                 }
             }
