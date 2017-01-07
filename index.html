@@ -15,61 +15,79 @@
             width: 100%;
             height: 100%
         }
+
+        #panel {
+            position: absolute;
+            right: 0px;
+            top: 0px;
+            border-radius: 5px;
+            background-color: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-flow: column wrap;
+            align-content: center;
+        }
     </style>
 </head>
 
 <body>
+    <div id="panel">
+        <label for="amount">Amount:</label>
+        <input id="amount" value="600" />
+        <label for="Speed">Speed:</label>
+        <input id="speed" value="35" />
+        <label for="view">Bird field of view:</label>
+        <input id="view" value="7" />
+        <label for="spread">Inital spread:</label>
+        <input id="spread" value="80" />
+        <label for="coh">Cohesion:</label>
+        <input id="coh" value="6.5" />
+        <label for="sep">Seperation:</label>
+        <input id="sep" value="7" />
+        <label for="ali">Alignment:</label>
+        <input id="ali" value="6.5" />
+        <button id="submit" onclick="reload()">Submit</button>
+    </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/randomcolor/0.4.4/randomColor.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r82/three.js"></script>
     <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
     <script>
-        // Paremters to be adjusted for differnt behaviors, these were chosen by trial and error
-        var coh = 6.5;
-        var sep = 7;
-        var ali = 6.5;
-        var amount = 500;
-        var spread = 80;
-        var speed = 35;
-        var view = 7;
 
-        // Create a scene which will hold all our meshes to be rendered
-        var scene = new THREE.Scene();
+        var scene;
 
         // A list that all bird objects will be held in
-        var birds = [];
+        var birds;
+
+        // Orbit controls for moving the view
+        var controls;
+
+        // Create a renderer
+        var renderer;
+        // Create a camera
+        var camera;
+
+        renderer = new THREE.WebGLRenderer({
+            antialias: true
+        });
 
 
-        // Create and position a camera
-        var camera = new THREE.PerspectiveCamera(
+        // Create a scene which will hold all our meshes to be rendered
+
+        scene = new THREE.Scene();
+        // position a camera
+        camera = new THREE.PerspectiveCamera(
             60, // Field of view
             window.innerWidth / window.innerHeight, // Aspect ratio
             0.1, // Near clipping pane
             1000 // Far clipping pane
         );
 
-        // Reposition the camera
-        camera.position.set(0, 30, 50);
-
-        // Point the camera at a given coordinate
-        camera.lookAt(new THREE.Vector3(0, 15, 0))
-
-        // Create a renderer
-        var renderer = new THREE.WebGLRenderer({
-            antialias: true
-        });
-
-        // Size should be the same as the window
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
-        // Set a near white clear color (default is black)
-        renderer.setClearColor(0xfff6e6);
-
-        // Enable shadow mapping
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-        // Append to the document
-        document.body.appendChild(renderer.domElement);
+        // Add an orbit control which allows moving around the scene. See the three.js example for more details
+        // https://github.com/mrdoob/three.js/blob/dev/examples/js/controls/OrbitControls.
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target = new THREE.Vector3(0, 15, 0);
+        controls.maxPolarAngle = Math.PI / 2;
 
         // Add an ambient lights
         var ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -86,37 +104,86 @@
         pointLight.shadow.mapSize.height = 1024;
         scene.add(pointLight);
 
-        // A basic material that will be the ground
-        var shadowMaterial = new THREE.MeshStandardMaterial({
-            color: 0x333333,
-            shading: THREE.FlatShading,
-            metalness: 0,
-            roughness: 0.8
-        });
-        shadowMaterial.opacity = 0.5;
-        let groundSize = 10000;
-        var groundMesh = new THREE.Mesh(
-            new THREE.BoxGeometry(groundSize, .1, groundSize),
-            shadowMaterial
-        );
-        groundMesh.receiveShadow = true;
-        scene.add(groundMesh);
+        reload();
+
+        function reload() {
+
+          // Paremters to be adjusted for differnt behaviors, these were chosen by trial and error
+            coh = parseInt(document.getElementById('coh').value);
+            sep = parseInt(document.getElementById('sep').value);
+            ali = parseInt(document.getElementById('ali').value);
+            amount = parseInt(document.getElementById('amount').value);
+            spread = parseInt(document.getElementById('spread').value);
+            speed = parseInt(document.getElementById('speed').value);
+            view = parseInt(document.getElementById('view').value);
+
+            // initalizes the bird list
+            birds = [];
+
+            // removes all meshes from the scene
+            var to_remove = [];
+
+            scene.traverse(function(child) {
+                if (child instanceof THREE.Mesh && !child.userData.keepMe === true) {
+                    to_remove.push(child);
+                }
+            });
+
+            for (var i = 0; i < to_remove.length; i++) {
+                scene.remove(to_remove[i]);
+            }
 
 
-        for (var i = 0; i < amount; i++) {
-            birds.push(new Bird());
-            scene.add(birds[i].shape);
-            birds[i].id = i;
+            // Reposition the camera
+            camera.position.set(0, 30, 50);
+
+            // Point the camera at a given coordinate
+            camera.lookAt(new THREE.Vector3(0, 15, 0))
+
+
+
+            // Size should be the same as the window
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Set a near white clear color (default is black)
+            renderer.setClearColor(0xfff6e6);
+
+            // Enable shadow mapping
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            // Append to the document
+            document.body.appendChild(renderer.domElement);
+
+
+
+            // A basic material that will be the ground
+            var shadowMaterial = new THREE.MeshStandardMaterial({
+                color: 0x333333,
+                shading: THREE.FlatShading,
+                metalness: 0,
+                roughness: 0.8
+            });
+            shadowMaterial.opacity = 0.5;
+            let groundSize = 10000;
+            var groundMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(groundSize, .1, groundSize),
+                shadowMaterial
+            );
+            groundMesh.receiveShadow = true;
+            scene.add(groundMesh);
+
+
+            for (var i = 0; i < amount; i++) {
+                birds.push(new Bird());
+                scene.add(birds[i].shape);
+                birds[i].id = i;
+            }
+
+
+
+            requestAnimationFrame(render);
         }
-
-
-
-        // Add an orbit control which allows moving around the scene. See the three.js example for more details
-        // https://github.com/mrdoob/three.js/blob/dev/examples/js/controls/OrbitControls.
-        var controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.target = new THREE.Vector3(0, 15, 0);
-        controls.maxPolarAngle = Math.PI / 2;
-        requestAnimationFrame(render);
 
         function render() {
             for (bird of birds) {
@@ -154,7 +221,7 @@
 
             this.velocity = new THREE.Vector3(2 * Math.random() - 1, Math.random(), 2 * Math.random() - 1);
             this.velocity.normalize();
-            
+
             // id is for debugging purposes
             this.id = 1;
 
@@ -175,16 +242,16 @@
                         // Does not check self
                         if (bpos.distanceToSquared(pos) < Math.pow(view, 2)) {
                             // If this bird is on the neighbourhood
-                            
+
                             // adds all velocity of boids in vicinity
                             alignment.add(bvel);
-                            
-                             // adds all positions of boids in vicinity
+
+                            // adds all positions of boids in vicinity
                             cohesion.add(bpos);
-                            
+
                             // calculates a scaling seperation force that increases nonlinearly when other boids get closer
                             separation.add(bpos).sub(pos).multiplyScalar(5 / bpos.distanceTo(pos));
-                            
+
                             // counts the number of boids in vicinity for later calulations
                             numInTheHood++;
                         }
@@ -195,7 +262,7 @@
                 if (pos.y < 5) {
                     floor.y = Math.abs(5 / pos.y);
                 }
-                
+
                 // uses the total velocity to calculate the average velocity of those in the vicinity
                 alignment.divideScalar(numInTheHood);
                 alignment.normalize();
