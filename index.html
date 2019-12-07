@@ -36,7 +36,7 @@
         <label for="amount">Amount:</label>
         <input id="amount" value="600" />
         <label for="Speed">Speed:</label>
-        <input id="speed" value="35" />
+        <input id="speed" value="25" />
         <label for="cohview">Bird field of view: Cohesion</label>
         <input id="cohview" value="1" />
         <label for="sepview">Bird field of view: Seperation</label>
@@ -192,13 +192,17 @@
             requestAnimationFrame(render);
         }
 
+        var lastTime = (new Date()).getTime();
+        var currentTime = (new Date()).getTime();
         function render() {
+            currentTime = (new Date()).getTime();
             for (bird of birds) {
                 // steering behavoir sets velocity
                 bird.steer(birds);
                 // update moves the boids location based on velocity
-                bird.update(1 / 60);
+                bird.update((currentTime - lastTime) / 1000);
             }
+            lastTime = currentTime;
             // Update camera position based on the controls
             controls.update();
 
