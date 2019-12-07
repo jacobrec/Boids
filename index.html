@@ -37,8 +37,12 @@
         <input id="amount" value="600" />
         <label for="Speed">Speed:</label>
         <input id="speed" value="35" />
-        <label for="view">Bird field of view:</label>
-        <input id="view" value="7" />
+        <label for="cohview">Bird field of view: Cohesion</label>
+        <input id="cohview" value="1" />
+        <label for="sepview">Bird field of view: Seperation</label>
+        <input id="sepview" value="7" />
+        <label for="aliview">Bird field of view: Alignment</label>
+        <input id="aliview" value="7" />
         <label for="spread">Inital spread:</label>
         <input id="spread" value="80" />
         <label for="coh">Cohesion:</label>
@@ -115,7 +119,10 @@
             amount = parseInt(document.getElementById('amount').value);
             spread = parseInt(document.getElementById('spread').value);
             speed = parseInt(document.getElementById('speed').value);
-            view = parseInt(document.getElementById('view').value);
+            cohview = parseInt(document.getElementById('cohview').value);
+            sepview = parseInt(document.getElementById('sepview').value);
+            aliview = parseInt(document.getElementById('aliview').value);
+            view = Math.max(cohview, sepview, aliview);
 
             // initalizes the bird list
             birds = [];
@@ -242,15 +249,19 @@
                         // Does not check self
                         if (bpos.distanceToSquared(pos) < Math.pow(view, 2)) {
                             // If this bird is on the neighbourhood
+                            if (bpos.distanceToSquared(pos) < Math.pow(aliview, 2)) {
+                                // adds all velocity of boids in vicinity
+                                alignment.add(bvel);
+                            }
+                            if (bpos.distanceToSquared(pos) < Math.pow(cohview, 2)) {
+                                // adds all positions of boids in vicinity
+                                cohesion.add(bpos);
+                            }
 
-                            // adds all velocity of boids in vicinity
-                            alignment.add(bvel);
-
-                            // adds all positions of boids in vicinity
-                            cohesion.add(bpos);
-
-                            // calculates a scaling seperation force that increases nonlinearly when other boids get closer
-                            separation.add(bpos).sub(pos).multiplyScalar(5 / bpos.distanceTo(pos));
+                            if (bpos.distanceToSquared(pos) < Math.pow(sepview, 2)) {
+                                // calculates a scaling seperation force that increases nonlinearly when other boids get closer
+                                separation.add(bpos).sub(pos).multiplyScalar(5 / bpos.distanceTo(pos));
+                            }
 
                             // counts the number of boids in vicinity for later calulations
                             numInTheHood++;
